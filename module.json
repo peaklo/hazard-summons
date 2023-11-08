@@ -8,8 +8,8 @@
     "scripts/summonFilters.js",
     "scripts/mightySummoner.js"
   ],
-  "manifest": "https://raw.githubusercontent.com/peaklo/hazard-summons/main/module.json",
-  "download": "https://github.com/peaklo/hazard-summons/archive/refs/tags/module.zip",
+  "manifest": "https://github.com/peaklo/hazard-summons/releases/latest/download/module.json",
+  "download": "https://github.com/peaklo/hazard-summons/releases/latest/download/module.zip",
   "relationships": {
     "requires": [
       {
