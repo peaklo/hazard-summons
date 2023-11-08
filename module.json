@@ -1,0 +1,22 @@
+{
+  "id": "hazard-summons",
+  "title": "Hazard Summons",
+  "description": "Hazardous summons.",
+  "version": "0.2.0",
+  "scripts": [
+    "scripts/convertDcToCheck.js",
+    "scripts/summonFilters.js",
+    "scripts/mightySummoner.js"
+  ],
+  "manifest": "https://raw.githubusercontent.com/peaklo/hazard-summons/main/module.json",
+  "download": "https://github.com/peaklo/hazard-summons/archive/refs/tags/module.zip",
+  "relationships": {
+    "requires": [
+      {
+        "id": "foundry-summons",
+        "type": "module",
+        "manifest": "https://github.com/MrVauxs/foundry-summons/releases/latest/download/module.json"
+      }
+    ]
+  }
+}
