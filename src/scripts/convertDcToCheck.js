@@ -32,10 +32,10 @@ const dcButton = (dc) => {
   }
 }
 
-const dcDialog = (_buttons, options = {}) => {
+const dcDialog = ({_buttons, options = {}}) => {
   let content
   let buttons = {
-    ...buttons,
+    ..._buttons,
     ...(options.showInput && {
       roll: {
         icon: "<i class='fas fa-check'></i>",
@@ -65,16 +65,17 @@ const dcDialog = (_buttons, options = {}) => {
 
 const dcBasic = () => {
   dcDialog(
-    {
+    {buttons: {
       dc12: dcButton(12),
       dc14: dcButton(14),
       dc15: dcButton(15),
       dc16: dcButton(16),
       dc18: dcButton(18),
     },
-    {
+    options: {
       showInput: false,
     }
+  }
   )
 }
 
