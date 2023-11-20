@@ -81,6 +81,7 @@ const dcBasic = () => {
 window.hazardSummons = window.hazardSummons || {}
 window.hazardSummons = {
   ...(window.hazardSummons || {}),
+  dcBasic,
   dcToCheck,
   dcDialog,
 }
