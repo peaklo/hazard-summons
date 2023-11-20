@@ -48,6 +48,7 @@ async function openMenu() {
 Hooks.on('fs-loadingPacks', (index) => {
   packs = game.settings.get(moduleID, 'sources')
   for (const pack of packs) {
+    // TODO
   }
 })
 
