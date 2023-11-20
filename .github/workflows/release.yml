@@ -1,11 +1,19 @@
 name: Release Creation on Version Tag
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_run:
+    workflows: ["Version Creation on Push"]
+    types:
+      - completed
   release:
     types: [published]
+
+# on:
+#   push:
+#     tags:
+#       - "v*"
+#   release:
+#     types: [published]
 
 jobs:
   build:
