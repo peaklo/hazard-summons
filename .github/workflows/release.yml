@@ -3,10 +3,7 @@ name: Release Creation on Version Tag
 on:
   workflow_run:
     workflows: ["Version Creation on Push"]
-    types:
-      - completed
-  release:
-    types: [published]
+    types: [completed]
 
 # on:
 #   push:
@@ -55,11 +52,11 @@ jobs:
         id: create_version_release
         uses: ncipollo/release-action@v1
         with:
-          allowUpdates: true # Set this to false if you want to prevent updating existing releases
-          name: ${{ github.event.release.name }}
-          draft: ${{ github.event.release.draft }}
-          prerelease: ${{ github.event.release.prerelease }}
+          allowUpdates: false # Set this to false if you want to prevent updating existing releases
+          # name: ${{ github.event.release.name }}
+          # draft: ${{ github.event.release.draft }}
+          # prerelease: ${{ github.event.release.prerelease }}
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: './module.json, ./module.zip'
-          tag: ${{ github.event.release.tag_name }}
-          body: ${{ github.event.release.body }}
+          tag: ${{ steps.get_version.outputs.version }}
+          # body: ${{ github.event.release.body }}
