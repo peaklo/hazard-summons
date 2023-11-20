@@ -2,7 +2,7 @@
   "id": "hazard-summons",
   "title": "Hazard Summons",
   "description": "Hazardous summons.",
-  "version": "0.2.0",
+  "version": "0.0.0",
   "scripts": [
     "scripts/convertDcToCheck.js",
     "scripts/summonFilters.js",
