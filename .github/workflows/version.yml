@@ -17,7 +17,7 @@ jobs:
         id: semantic_version
         uses: paulhatch/semantic-version@v5.3.0
         with:
-          tag_prefox: "v"
+          tag_prefix: "v"
           major_pattern: "[major]"
           major_regexp_flags: "ig"
           minor_pattern: "[minor]"
@@ -28,7 +28,7 @@ jobs:
       - name: Create Tag
         id: create_tag
         run: |
-          CURRENT_VERSION="${{ steps.semantic_version.outputs.version}}"
+          CURRENT_VERSION="${{steps.semantic_version.outputs.version}}"
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git tag -a "v${CURRENT_VERSION}" -m "Version ${CURRENT_VERSION}"
