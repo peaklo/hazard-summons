@@ -22,7 +22,6 @@ jobs:
           tag_prefix: "v"
           major_pattern: "[major]"
           minor_pattern: "[minor]"
-          bump_each_commit_patch_pattern: "[patch]"
           enable_prerelease_mode: false
           version_format: "${major}.${minor}.${patch}"
           debug: false
