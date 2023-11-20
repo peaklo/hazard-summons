@@ -25,7 +25,7 @@ jobs:
           bump_each_commit_patch_pattern: "[patch]"
           enable_prerelease_mode: false
           version_format: "${major}.${minor}.${patch}"
-          debug: true
+          debug: false
 
       - name: Create Tag
         id: create_tag
