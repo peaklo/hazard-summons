@@ -3,11 +3,7 @@
   "title": "Hazard Summons",
   "description": "Hazardous summons.",
   "version": "0.0.0",
-  "scripts": [
-    "scripts/convertDcToCheck.js",
-    "scripts/summonFilters.js",
-    "scripts/mightySummoner.js"
-  ],
+  "esmodules": [ "index.js" ],
   "manifest": "https://github.com/peaklo/hazard-summons/releases/latest/download/module.json",
   "download": "https://github.com/peaklo/hazard-summons/releases/latest/download/module.zip",
   "relationships": {
