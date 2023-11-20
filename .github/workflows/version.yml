@@ -24,6 +24,7 @@ jobs:
           minor_regexp_flags: "ig"
           enable_prerelease_mode: false
           version_format: "${major}.${minor}.${patch}"
+          debug: true
 
       - name: Create Tag
         id: create_tag
