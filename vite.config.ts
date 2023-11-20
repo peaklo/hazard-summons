@@ -5,7 +5,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const s_PACKAGE_ID = 'modules/foundry-summons';
+const s_PACKAGE_ID = 'modules/hazard-summons';
 
 const config: UserConfig = {
   publicDir: 'public',
@@ -31,7 +31,7 @@ const config: UserConfig = {
     emptyOutDir: false,
     sourcemap: true,
     lib: {
-    //   name: 'hazard-summons',
+      name: 'hazard-summons',
       entry: './index.js',
       formats: ['es'],
       fileName: 'index'
