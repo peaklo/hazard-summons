@@ -21,9 +21,8 @@ jobs:
         with:
           tag_prefix: "v"
           major_pattern: "[major]"
-          major_regexp_flags: "ig"
           minor_pattern: "[minor]"
-          minor_regexp_flags: "ig"
+          bump_each_commit_patch_pattern: "[patch]"
           enable_prerelease_mode: false
           version_format: "${major}.${minor}.${patch}"
           debug: true
