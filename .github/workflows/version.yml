@@ -34,3 +34,10 @@ jobs:
           git config --global user.email "actions@github.com"
           git tag -a "v${CURRENT_VERSION}" -m "Version ${CURRENT_VERSION}"
           git push --tags
+
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: version-tagged
+          client-payload: '{"version": "${{ steps.semantic_version.outputs.version}}" }'
