@@ -14,7 +14,6 @@ const isBearAuraActive = (sourceData) => {
   return true
 }
 
-
 const getSummonerLevel = (sourceData) => {
   let level = sourceData.summonerTokenDocument.actor?.classes?.druid?.system?.levels
   if (level)
@@ -78,7 +77,7 @@ const adjustHP = async ({ location, updates, sourceData }) => {
 
   if (!updates.actor.flags.mightySummoner?.adjustedHP){
     let tempHP = 0
-    if (isBearAuraActive())
+    if (isBearAuraActive(sourceData))
       tempHP = getSummonerLevel(sourceData) + 5
     addMightySummonerHitpoints(updates, tempHP)
     updates.actor.flags.mightySummoner.adjustedHP = true
