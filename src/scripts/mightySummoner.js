@@ -70,14 +70,14 @@ const promptAuraHP = async (callback) => {
 }
 
 const adjustHP = async ({ location, updates, sourceData }) => {
-  if (!isMightySummoner(sourceData))
-    return
+//  if (!isMightySummoner(sourceData))
+//    return
 
   updates.actor.flags.mightySummoner = updates.actor.flags.mightySummoner || {};
 
   if (!updates.actor.flags.mightySummoner?.adjustedHP){
-    let tempHP = 0
-    if (isBearAuraActive(sourceData))
+    let tempHP = 14
+    //if (isBearAuraActive(sourceData))
       tempHP = getSummonerLevel(sourceData) + 5
     addMightySummonerHitpoints(updates, tempHP)
     updates.actor.flags.mightySummoner.adjustedHP = true
