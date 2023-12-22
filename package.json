@@ -1,19 +1,21 @@
 {
-	"license": "MIT",
-	"private": true,
-	"type": "module",
-	"author": "Peaklo",
-	"contributors": [
-		"Peaklo"
-	],
-	"devDependencies": {
-		"@rollup/plugin-node-resolve": "^15.2.3",
-		"vite": "^4.5.0"
-	},
-	"scripts": {
-		"build": "vite build",
-		"dev": "vite",
-		"lint": "prettier --plugin-search-dir . --check . && eslint .",
-		"format": "prettier --plugin-search-dir . --write ."
-	}
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "author": "Peaklo",
+  "contributors": [
+    "Peaklo"
+  ],
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "lint": "^0.8.19",
+    "prettier": "^3.1.1",
+    "vite": "^4.5.0"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "lint": "prettier --plugin-search-dir . --check . && eslint .",
+    "format": "prettier --plugin-search-dir . --write ."
+  }
 }

@@ -1,61 +1,62 @@
+import { MODULE } from "./constants.js";
 const typeFilter = function (type) {
   return {
     name: type,
     disabled: true,
     function: (index) =>
       index.filter((x) => x.system.details.type.value == type),
-  }
-}
+  };
+};
 const crFilter = function (cr) {
   return {
-    name: cr + ' CR',
+    name: cr + " CR",
     disabled: true,
     function: (index) => index.filter((x) => x.system.details.cr == cr),
-  }
-}
+  };
+};
 
 const filters = [
   {
-    name: 'Positive CR',
+    name: "Positive CR",
     function: (index) => index.filter((x) => x.system.details.cr > 0),
   },
-  typeFilter('beast'),
-  typeFilter('fey'),
+  typeFilter("beast"),
+  typeFilter("fey"),
   crFilter(0.25),
   crFilter(0.5),
   crFilter(1),
   crFilter(2),
-]
+];
 
 const object = {
   filters,
   sorting: [
     {
-      name: 'CR Ascending',
+      name: "CR Ascending",
       function: (a, b) => a.system.details.cr - b.system.details.cr,
     },
   ],
   options: {
     defaultFilters: false,
   },
-}
+};
 
 async function openMenu() {
-  foundrySummons.openMenu(object)
+  foundrySummons.openMenu(object);
 }
 
-;('styles/hazard-summons.css')
-Hooks.on('fs-loadingPacks', (index) => {
-  packs = game.settings.get(moduleID, 'sources')
+("styles/hazard-summons.css");
+Hooks.on("fs-loadingPacks", (index) => {
+  packs = game.settings.get(MODULE, "sources");
   for (const pack of packs) {
     // TODO
   }
-})
+});
 
-window.hazardSummons = window.hazardSummons || {}
+window.hazardSummons = window.hazardSummons || {};
 window.hazardSummons = {
   ...(window.hazardSummons || {}),
   openMenu,
   //summon,
   //debug,
-}
+};

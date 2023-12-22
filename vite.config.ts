@@ -1,42 +1,43 @@
-import type { UserConfig } from 'vite';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import type { UserConfig } from "vite";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const s_PACKAGE_ID = 'modules/hazard-summons';
+const s_PACKAGE_ID = "modules/hazard-summons";
 
 const config: UserConfig = {
-  publicDir: 'public',
-  root: 'src/',
+  publicDir: "public",
+  root: "src/",
   base: `/${s_PACKAGE_ID}/`, // Base module path that 30001 / served dev directory.
-  logLevel: 'info',
+  logLevel: "info",
   server: {
     port: 30001,
     open: true,
-        proxy: {
-        // Serves static files from main Foundry server.
-        [`^(/${s_PACKAGE_ID}/(assets|lang|packs|style.css))`]: 'http://localhost:30000',
+    proxy: {
+      // Serves static files from main Foundry server.
+      [`^(/${s_PACKAGE_ID}/(assets|lang|packs|style.css))`]:
+        "http://localhost:30000",
 
-        // All other paths besides package ID path are served from main Foundry server.
-        [`^(?!/${s_PACKAGE_ID}/)`]: 'http://localhost:30000',
+      // All other paths besides package ID path are served from main Foundry server.
+      [`^(?!/${s_PACKAGE_ID}/)`]: "http://localhost:30000",
 
-        // Enable socket.io from main Foundry server.
-        '/socket.io': { target: 'ws://localhost:30000', ws: true },
-    }
+      // Enable socket.io from main Foundry server.
+      "/socket.io": { target: "ws://localhost:30000", ws: true },
+    },
   },
   build: {
     outDir: __dirname,
     emptyOutDir: false,
     sourcemap: true,
     lib: {
-      name: 'hazard-summons',
-      entry: './index.js',
-      formats: ['es'],
-      fileName: 'index'
-    }
+      name: "hazard-summons",
+      entry: "./index.js",
+      formats: ["es"],
+      fileName: "index",
+    },
   },
-}
+};
 
 export default config;
