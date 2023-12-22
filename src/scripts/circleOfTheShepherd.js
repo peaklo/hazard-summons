@@ -99,16 +99,15 @@ const cotsModifySummon = ({ location, updates, sourceData }) => {
  * @param {*} tokenIds  token ids located within the aura
  * @param {*} summonerLevel Level of the summoner
  */
-const grantBearAuraTempHp = (tokens, tokenIds, summonerLevel) => {
+const grantBearAuraTempHp = (actors, summonerLevel) => {
   let hp = summonerLevel + 5;
-  tokenIds.forEach((id) => {
-    let token = tokens.get(id);
-    let actor = token.actor;
+  actors.forEach((actor) => {
+    let temps = actor.system?.attributes?.hp.temp || 0
     if (
       (actor.flags[MODULE]?.summoned || actor.type == "character") &&
-      token.actor.system?.attributes?.hp.temp < hp
+      temps < hp
     ) {
-      token.actor.update({ system: { attributes: { hp: { temp: hp } } } });
+      actor.update({ system: { attributes: { hp: { temp: hp } } } });
     }
   });
 };
@@ -124,17 +123,27 @@ const deleteAura = (spiritAura) => {
   if (doc) doc.delete();
 };
 
-const updateTemplate = (actor, auraTemplate) => {
+/** Delete the previous aura template and save details on the new one.
+ *
+ * @param {*} actor         Actor associated with the aura
+ * @param {*} auraTemplate  Template representing aura
+ * @param {*} type          Type of aura (bear, ...)
+ */
+const updateTemplate = (actor, auraTemplate, type) => {
   deleteAura(actor.flags[MODULE]?.spiritAura);
   let update = { flags: {} };
   update.flags[MODULE] = {
     spiritAura: {
-      type: "bear",
+      type,
       sceneId: auraTemplate.parent.id,
       templateId: auraTemplate.id,
     },
   };
   actor.update(update);
+};
+
+const cotsBearAura = (scope, actor, token) => {
+  cotsSpiritAura(scope, actor, token, "bear");
 };
 
 /** Create a spirit aura from Circle of the Shepherd druid subclass.
@@ -143,7 +152,7 @@ const updateTemplate = (actor, auraTemplate) => {
  * @param {*} actor The actor, or an object containing an actor id e.g. {id: ""} to associate the aura with
  * @param {*} token unused
  */
-const cotsBearAura = async (scope, actor, token) => {
+const cotsSpiritAura = async (scope, actor, token, type) => {
   actor = game.actors.get(actor?.id);
   const templateData = {
     t: "circle",
@@ -161,21 +170,57 @@ const cotsBearAura = async (scope, actor, token) => {
 
   const template = new game.dnd5e.canvas.AbilityTemplate(doc);
   let [auraTemplate] = await template.drawPreview();
-  const callback = (a, b) => {
+
+  // Delete the old aura and attach the new aura data to the actor
+  if (actor) updateTemplate(actor, auraTemplate, "bear");
+
+  if (type == "bear") setupBearAura(actor, auraTemplate);
+
+  // const callback = (a, b) => {
+  //   try {
+  //     let tokenIds = game.modules
+  //       .get("templatemacro")
+  //       .api.findContained(auraTemplate);
+  //     console.log(`Found ${tokenIds.length} tokens in aura ${auraTemplate.id}`);
+  //     const tokens = auraTemplate.parent.tokens;
+  //     Hooks.off("refreshMeasuredTemplate", callback);
+  //     grantBearAuraTempHp(tokens, tokenIds, getSummonerLevel(actor));
+  //   } catch (e) {
+  //     console.log(`Error while checking contents of aura: ${e.message}`);
+  //   }
+  // };
+  // Hooks.on("refreshMeasuredTemplate", callback);
+};
+
+const setupBearAura = (actor, template) => {
+  const callback = () => {
     try {
-      let tokenIds = game.modules
-        .get("templatemacro")
-        .api.findContained(auraTemplate);
-      console.log(`Found ${tokenIds.length} tokens in aura ${auraTemplate.id}`);
-      const tokens = auraTemplate.parent.tokens;
       Hooks.off("refreshMeasuredTemplate", callback);
-      grantBearAuraTempHp(tokens, tokenIds, getSummonerLevel(actor));
-      if (actor) updateTemplate(actor, auraTemplate);
+      let actors = getActorsInTemplate(template);
+      // let tokenIds = game.modules
+      //   .get("templatemacro")
+      //   .api.findContained(template);
+      // console.log(`Found ${tokenIds.length} tokens in aura ${template.id}`);
+      // const tokens = template.parent.tokens;
+      // grantBearAuraTempHp(tokens, tokenIds, getSummonerLevel(actor));
+      grantBearAuraTempHp(actors, getSummonerLevel(actor));
     } catch (e) {
       console.log(`Error while checking contents of aura: ${e.message}`);
     }
   };
   Hooks.on("refreshMeasuredTemplate", callback);
+};
+
+const getActorsInTemplate = (template) => {
+  const tokens = template.parent.tokens;
+  let tokenIds = game.modules.get("templatemacro").api.findContained(template);
+  // console.log(`Found ${tokenIds.length} tokens in aura ${template.id}`);
+  let actors = [];
+  if (tokenIds)
+    tokenIds.forEach((id) => {
+      actors.push(tokens.get(id).actor);
+    });
+  return actors;
 };
 
 Hooks.once("init", () => {
