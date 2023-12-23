@@ -1,21 +1,22 @@
-import { MODULE } from "./constants.js";
+// import { MODULE } from "./constants.js"
+
 const typeFilter = function (type) {
   return {
     name: type,
     disabled: true,
     function: (index) =>
       index.filter((x) => x.system.details.type.value == type),
-  };
-};
+  }
+}
 const crFilter = function (cr) {
   return {
     name: cr + " CR",
     disabled: true,
     function: (index) => index.filter((x) => x.system.details.cr == cr),
-  };
-};
+  }
+}
 
-const filters = [
+const filterTypeAndCR = [
   {
     name: "Positive CR",
     function: (index) => index.filter((x) => x.system.details.cr > 0),
@@ -26,10 +27,10 @@ const filters = [
   crFilter(0.5),
   crFilter(1),
   crFilter(2),
-];
+]
 
-const object = {
-  filters,
+const foundrySummonOptions = {
+  filters: filterTypeAndCR,
   sorting: [
     {
       name: "CR Ascending",
@@ -39,24 +40,24 @@ const object = {
   options: {
     defaultFilters: false,
   },
-};
-
-async function openMenu() {
-  foundrySummons.openMenu(object);
 }
 
-("styles/hazard-summons.css");
-Hooks.on("fs-loadingPacks", (index) => {
-  packs = game.settings.get(MODULE, "sources");
-  for (const pack of packs) {
-    // TODO
-  }
-});
+async function openMenu() {
+  foundrySummons.openMenu(foundrySummonOptions)
+}
 
-window.hazardSummons = window.hazardSummons || {};
+;("styles/hazard-summons.css")
+// Hooks.on("fs-loadingPacks", (index) => {
+//     packs = game.settings.get(MODULE, "sources")
+//     for (const pack of packs) {
+//     // TODO
+//     }
+// })
+
+window.hazardSummons = window.hazardSummons || {}
 window.hazardSummons = {
   ...(window.hazardSummons || {}),
   openMenu,
   //summon,
   //debug,
-};
+}

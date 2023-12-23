@@ -4,8 +4,8 @@
  */
 const dcToCheck = (dcValue) => {
   try {
-    let roll = new Roll(`1d20 + ${dcValue - 12}`);
-    console.log(roll.evaluate({ async: false }));
+    let roll = new Roll(`1d20 + ${dcValue - 12}`)
+    console.log(roll.evaluate({ async: false }))
     roll.toMessage(
       {
         user: game.user._id,
@@ -13,22 +13,22 @@ const dcToCheck = (dcValue) => {
         content: `DC ${dcValue}, result ${roll.total}`,
         whisper: ChatMessage.getWhisperRecipients("GM"),
       },
-      { rollMode: "gmroll" },
-    );
+      { rollMode: "gmroll" }
+    )
   } catch (e) {
-    console.log("Failed roll " + e);
+    console.log("Failed roll " + e)
   }
-};
+}
 
 /** Locate the input form, extract the value, do the roll
  *
  * @param {*} html  HTML
  */
 const parseDcForm = (html) => {
-  let result = html.find("input[name='dc_value']");
-  let dcValue = parseInt(result.val());
-  dcToCheck(dcValue);
-};
+  let result = html.find("input[name='dc_value']")
+  let dcValue = parseInt(result.val())
+  dcToCheck(dcValue)
+}
 
 /** Convenience method to create a button object for a specific DC
  *
@@ -40,8 +40,8 @@ const dcButton = (dc) => {
     icon: "<i class='fas fa-check'></i>",
     label: `DC ${dc}`,
     callback: () => dcToCheck(dc),
-  };
-};
+  }
+}
 
 /** Create a DC converter dialog with optional DC buttons and text input.
  *
@@ -54,14 +54,14 @@ const dcDialog = ({ buttons, options = {} }) => {
     ...(options.showInput && {
       roll: {
         icon: "<i class='fas fa-check'></i>",
-        label: `Roll`,
+        label: "Roll",
         callback: parseDcForm.bind(this),
       },
     }),
     end: {
-      label: `Cancel`,
+      label: "Cancel",
     },
-  };
+  }
 
   // Build dialog
   new Dialog({
@@ -76,34 +76,34 @@ const dcDialog = ({ buttons, options = {} }) => {
     }),
     buttons,
     default: "yes",
-  }).render(true);
-};
+  }).render(true)
+}
 
 /** Generate a quick dialog with a default selection of buttons
  *
  * @param {*} showInput
  */
 const dcBasic = () => {
-  dcList(12, 14, 15, 16, 18);
-};
+  dcList(12, 14, 15, 16, 18)
+}
 
 /** Create a dialog with a list of DC buttons
  *
  * @param  {...any} buttonValues List of DC values to create buttons for
  */
 const dcList = (...buttonValues) => {
-  let buttons = {};
+  let buttons = {}
   for (const value of buttonValues) {
-    buttons = { ...buttons, [`dcButton${value}`]: dcButton(value) };
+    buttons = { ...buttons, [`dcButton${value}`]: dcButton(value) }
   }
-  dcDialog({ buttons, options: { showInput: true } });
-};
+  dcDialog({ buttons, options: { showInput: true } })
+}
 
-window.hazardSummons = window.hazardSummons || {};
+window.hazardSummons = window.hazardSummons || {}
 window.hazardSummons = {
   ...(window.hazardSummons || {}),
   dcBasic,
   dcList,
   dcToCheck,
   dcDialog,
-};
+}

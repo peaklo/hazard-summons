@@ -1,1 +1,1 @@
-export const MODULE = "hazardSummons";
+export const MODULE = "hazard-summons"

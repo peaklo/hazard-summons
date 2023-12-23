@@ -1,0 +1,29 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "globals": {
+    "ChatMessage": "readonly",
+    "Dialog": "readonly",
+    "Hooks": "readonly",
+    "MeasuredTemplateDocument": "readonly",
+    "Roll": "readonly",
+    "canvas": "readonly",
+    "foundrySummons": "readonly",
+    "game": "readonly",
+    "packs": "readonly"
+  },
+  "ignorePatterns": ["./index.js"],
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "rules": {
+    "indent": ["error", 2],
+    "linebreak-style": ["error", "unix"],
+    "quotes": ["error", "double"],
+    "semi": ["error", "never"]
+  }
+}

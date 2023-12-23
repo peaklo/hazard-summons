@@ -1,11 +1,12 @@
-import type { UserConfig } from "vite";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
+import type { UserConfig } from "vite"
+import { fileURLToPath } from "url"
+import { dirname } from "path"
+import { MODULE } from "./src/scripts/constants"
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
-const s_PACKAGE_ID = "modules/hazard-summons";
+const s_PACKAGE_ID = MODULE
 
 const config: UserConfig = {
   publicDir: "public",
@@ -32,12 +33,12 @@ const config: UserConfig = {
     emptyOutDir: false,
     sourcemap: true,
     lib: {
-      name: "hazard-summons",
+      name: MODULE,
       entry: "./index.js",
       formats: ["es"],
       fileName: "index",
     },
   },
-};
+}
 
-export default config;
+export default config
