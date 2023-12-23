@@ -1,3 +1,5 @@
+import { MODULE_CAMEL } from "./constants.js"
+
 /** Convert a DC to a roll modifier
  *
  * @param {*} dcValue target DC
@@ -99,9 +101,8 @@ const dcList = (...buttonValues) => {
   dcDialog({ buttons, options: { showInput: true } })
 }
 
-window.hazardSummons = window.hazardSummons || {}
-window.hazardSummons = {
-  ...(window.hazardSummons || {}),
+window[MODULE_CAMEL] = {
+  ...(window[MODULE_CAMEL] || {}),
   dcBasic,
   dcList,
   dcToCheck,

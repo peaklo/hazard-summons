@@ -1,4 +1,4 @@
-import { MODULE } from "./constants.js"
+import { MODULE, MODULE_CAMEL } from "./constants.js"
 
 /** Return true if the actor has the specified feature
  *
@@ -89,6 +89,9 @@ const cotsModifySummon = ({ updates, sourceData }) => {
     summoned: true,
     summonerLevel: getSummonerLevel(summoner),
   }
+
+  actor.name = `Summoned ${actor.name}`
+  updates.token.name = actor.name
 
   if (isMightySummoner(summoner)) addMightySummonerFeatures(actor)
 }
@@ -239,8 +242,8 @@ Hooks.once("init", () => {
   Hooks.on("fs-preSummon", cotsModifySummon)
 })
 
-window[MODULE] = {
-  ...(window[MODULE] || {}),
+window[MODULE_CAMEL] = {
+  ...(window[MODULE_CAMEL] || {}),
   cotsBearAura,
   cotsModifySummon,
 }

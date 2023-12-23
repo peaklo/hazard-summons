@@ -6,7 +6,7 @@ import { MODULE } from "./src/scripts/constants"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-const s_PACKAGE_ID = MODULE
+const s_PACKAGE_ID = `modules/${MODULE}`
 
 const config: UserConfig = {
   publicDir: "public",

@@ -1,7 +1,7 @@
 {
   "id": "hazard-summons",
   "title": "Hazard Summons",
-  "description": "Hazardous summons.",
+  "description": "Hazardous summons and other summoning extensions.",
   "version": "0.0.0",
   "esmodules": ["index.js"],
   "manifest": "https://github.com/peaklo/hazard-summons/releases/latest/download/module.json",
