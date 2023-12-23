@@ -23,6 +23,11 @@
         "id": "foundry-summons",
         "type": "module",
         "manifest": "https://github.com/MrVauxs/foundry-summons/releases/latest/download/module.json"
+      },
+      {
+        "id": "templatemacro",
+        "type": "module",
+        "manifest": "https://github.com/krbz999/templatemacro/releases/latest/download/module.json"
       }
     ]
   },
