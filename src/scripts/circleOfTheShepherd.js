@@ -1,4 +1,23 @@
-import { MODULE, MODULE_CAMEL } from "./constants.js"
+import { MODULE, AURA, LOGLEVEL, LOGHEADER } from "./constants.js"
+
+const log = {
+  debug: (message) => LOGLEVEL >= 3 && console.log(`${LOGHEADER} ${message}`),
+  info: (message) => LOGLEVEL >= 2 && console.log(`${LOGHEADER} ${message}`),
+  warn: (message) => LOGLEVEL >= 1 && console.log(`${LOGHEADER} ${message}`),
+  error: (message) => LOGLEVEL >= 0 && console.log(`${LOGHEADER} ${message}`),
+}
+
+const newAura = (type, sceneId, templateId, hookName, hookIndex) => {
+  let aura = {
+    type,
+    sceneId,
+    templateId,
+    hookName: hookName,
+    hookIndex: hookIndex,
+  }
+  log.info(`Created aura: ${JSON.stringify(aura, null, 2)}`)
+  return aura
+}
 
 /** Return true if the actor has the specified feature
  *
@@ -20,6 +39,16 @@ const isCircleOfTheSheperd = (actor) => {
 
 const isMightySummoner = (actor) => {
   return hasTrait(actor, "Mighty Summoner")
+}
+
+const hasSpiritAuraType = (actor, type) => {
+  return actor?.flags[MODULE.flag]?.spiritAura?.type == type
+}
+
+const itemHasHealingType = (item) => {
+  let dd = item?.labels?.derivedDamage
+  if (!dd) return false
+  return dd.filter((damage) => damage.damageType == "healing").length > 0
 }
 
 const getSummonerLevel = (actor) => {
@@ -83,9 +112,9 @@ const cotsModifySummon = ({ updates, sourceData }) => {
   let actor = updates.actor
   let summoner = game.actors.get(sourceData.summonerTokenDocument.actorId)
   if (!isCircleOfTheSheperd(summoner)) return // Summons not eligible for modification
-  if (actor.flags[MODULE]?.summoned) return // Modification already applied to the summon template.
+  if (actor.flags[MODULE.id]?.summoned) return // Modification already applied to the summon template.
 
-  actor.flags[MODULE] = {
+  actor.flags[MODULE.id] = {
     summoned: true,
     summonerLevel: getSummonerLevel(summoner),
   }
@@ -110,9 +139,21 @@ const grantBearAuraTempHp = (actors, hp) => {
     })
 }
 
-// TODO hooks for unicorn aura?
-// hook preItemUsageConsumption
-// hook dnd5e.useItem
+const unicornSpiritAuraHealing = (actor) => {
+  let aura = actor.flags[MODULE.flag].spiritAura
+  let doc = game.scenes.get(aura.sceneId)?.templates?.get(aura.templateId)
+  if (!doc) return
+  let actors = getActorsInTemplate(doc, isSummonOrAlly)
+  let healing = getSummonerLevel(actor)
+  actors.forEach((actor) => {
+    let hp = actor.system.attributes.hp
+    healing = Math.min(hp.max - hp.value, healing)
+    log.info(`Unicorn Aura healing ${actor.name} for ${healing}`)
+    actor.update({
+      system: { attributes: { hp: { value: hp.value + healing } } },
+    })
+  })
+}
 
 /** Grant save/check advantage for bear aura - WIP
  * TODO Id prefer to grant these via an effect so they can be removed when
@@ -144,32 +185,19 @@ const grantBearAuraAdvantage = (actors) => {
 const deleteAura = (spiritAura) => {
   let sceneId = spiritAura?.sceneId
   let templateId = spiritAura?.templateId
+  if (spiritAura?.hookIndex)
+    Hooks.off(spiritAura.hookName, spiritAura?.hookIndex)
   let doc = game.scenes.get(sceneId)?.templates?.get(templateId)
   if (doc) doc.delete()
 }
 
-/** Delete the previous aura template and save details on the new one.
- *
- * @param {*} actor         Actor associated with the aura
- * @param {*} auraTemplate  Template representing aura
- * @param {*} type          Type of aura (bear, ...)
- */
-const updateTemplate = (actor, auraTemplate, type) => {
-  deleteAura(actor.flags[MODULE]?.spiritAura)
-  let update = { flags: {} }
-  update.flags[MODULE] = {
-    spiritAura: {
-      type,
-      sceneId: auraTemplate.parent.id,
-      templateId: auraTemplate.id,
-    },
-  }
-  actor.update(update)
-}
-
 // Convenience function exposed to users to create bear aura
 const cotsBearAura = (scope, actor, token) => {
-  cotsSpiritAura(scope, actor, token, "bear")
+  cotsSpiritAura(scope, actor, token, AURA.BEAR)
+}
+
+const cotsUnicornAura = (scope, actor, token) => {
+  cotsSpiritAura(scope, actor, token, AURA.UNICORN)
 }
 
 /** Create a spirit aura from Circle of the Shepherd druid subclass.
@@ -194,20 +222,48 @@ const cotsSpiritAura = async (scope, actor, token, type) => {
     parent: canvas.scene,
   })
 
+  // Delete existing aura
+  if (actor) deleteAura(actor.flags[MODULE.id]?.spiritAura)
+
+  // Create new template document
   const template = new game.dnd5e.canvas.AbilityTemplate(doc)
   let [auraTemplate] = await template.drawPreview()
 
-  // Delete the old aura and attach the new aura data to the actor
-  if (actor) updateTemplate(actor, auraTemplate, "bear")
+  let spiritAura
+  if (type == AURA.UNICORN) {
+    spiritAura = setupUnicornAura(auraTemplate)
+  } else if (type == AURA.BEAR) {
+    spiritAura = setupBearAura(actor, auraTemplate)
+  }
 
-  if (type == "bear") setupBearAura(actor, auraTemplate)
+  setActorAura(actor, spiritAura)
 }
 
-const setupBearAura = (actor, template) => {
+const checkAuraForHealing = (workflow) => {
+  if (!hasSpiritAuraType(workflow.actor, AURA.UNICORN)) return
+  if (!itemHasHealingType(workflow.item)) return
+  unicornSpiritAuraHealing(workflow.actor)
+}
+
+const setupUnicornAura = (auraTemplate) => {
+  log.info(`setupUnicornAura template: ${auraTemplate.id}`)
+  let hookName = "midi-qol.RollComplete"
+  let hookIndex = Hooks.on(hookName, checkAuraForHealing)
+  return newAura(
+    AURA.UNICORN,
+    auraTemplate.parent.id,
+    auraTemplate.id,
+    hookName,
+    hookIndex
+  )
+}
+
+const setupBearAura = (actor, auraTemplate) => {
+  log.info(`setupBearAura actor:${actor.id}, template: ${auraTemplate.id}`)
   const callback = () => {
     try {
       Hooks.off("refreshMeasuredTemplate", callback)
-      let actors = getActorsInTemplate(template, isSummonOrAlly)
+      let actors = getActorsInTemplate(auraTemplate, isSummonOrAlly)
       grantBearAuraTempHp(actors, getSummonerLevel(actor) + 5)
       // grantBearAuraAdvantage(actors)
     } catch (e) {
@@ -215,10 +271,11 @@ const setupBearAura = (actor, template) => {
     }
   }
   Hooks.on("refreshMeasuredTemplate", callback)
+  return newAura(AURA.BEAR, auraTemplate.parent.id, auraTemplate.id)
 }
 
 const isSummonOrAlly = (actor) => {
-  return actor.flags[MODULE]?.summoned || actor.type == "character"
+  return actor.flags[MODULE.id]?.summoned || actor.type == "character"
 }
 
 /** Return a list of all actors within the template
@@ -242,8 +299,43 @@ Hooks.once("init", () => {
   Hooks.on("fs-preSummon", cotsModifySummon)
 })
 
-window[MODULE_CAMEL] = {
-  ...(window[MODULE_CAMEL] || {}),
+// Need to recreate the unicorn aura hook
+Hooks.once("renderApplication", () => {
+  game.actors.forEach((actor) => {
+    log.debug(
+      `${actor.name}:${actor.id} spirit aura: ${
+        actor.flags[MODULE.flag]?.spiritAura
+      }`
+    )
+    if (!hasSpiritAuraType(actor, AURA.UNICORN)) return
+    let spiritAura = actor.flags[MODULE.flag].spiritAura
+    log.info(`Found spiritAura data on actor:${actor.id}: ${spiritAura}`)
+    let auraTemplate = game.scenes
+      .get(spiritAura.sceneId)
+      ?.templates?.get(spiritAura.templateId)
+    if (auraTemplate) {
+      spiritAura = setupUnicornAura(auraTemplate)
+      setActorAura(actor, spiritAura)
+    } else {
+      log.info("Cannot find scene or template, deleting aura data")
+      setActorAura(actor, {})
+    }
+  })
+})
+
+const setActorAura = (actor, spiritAura) => {
+  let update = { flags: {} }
+  update.flags[MODULE.flag] = { spiritAura }
+  log.info(
+    `Updating ${actor.name}:${actor.id}: ${JSON.stringify(update, null, 2)}`
+  )
+  actor.update(update)
+}
+
+window[MODULE.window] = window[MODULE.window] || {}
+window[MODULE.window] = {
+  ...(window[MODULE.window] || {}),
   cotsBearAura,
   cotsModifySummon,
+  cotsUnicornAura,
 }

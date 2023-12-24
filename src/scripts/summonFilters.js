@@ -1,4 +1,4 @@
-// import { MODULE } from "./constants.js"
+import { MODULE } from "./constants.js"
 
 const typeFilter = function (type) {
   return {
@@ -46,7 +46,7 @@ async function openMenu() {
   foundrySummons.openMenu(foundrySummonOptions)
 }
 
-;("styles/hazard-summons.css")
+// ;("styles/hazard-summons.css")
 // Hooks.on("fs-loadingPacks", (index) => {
 //     packs = game.settings.get(MODULE, "sources")
 //     for (const pack of packs) {
@@ -54,9 +54,9 @@ async function openMenu() {
 //     }
 // })
 
-window.hazardSummons = window.hazardSummons || {}
-window.hazardSummons = {
-  ...(window.hazardSummons || {}),
+window[MODULE.window] = window[MODULE.window] || {}
+window[MODULE.window] = {
+  ...(window[MODULE.window] || {}),
   openMenu,
   //summon,
   //debug,

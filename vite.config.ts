@@ -6,7 +6,7 @@ import { MODULE } from "./src/scripts/constants"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-const s_PACKAGE_ID = `modules/${MODULE}`
+const s_PACKAGE_ID = `modules/${MODULE.id}`
 
 const config: UserConfig = {
   publicDir: "public",
@@ -33,7 +33,7 @@ const config: UserConfig = {
     emptyOutDir: false,
     sourcemap: true,
     lib: {
-      name: MODULE,
+      name: MODULE.id,
       entry: "./index.js",
       formats: ["es"],
       fileName: "index",
