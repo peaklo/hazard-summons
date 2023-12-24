@@ -92,6 +92,14 @@ dcDialog(
 
 # Feature Development
 
+## Configuration
+
+A configuration sheet is required to enable/disable debug logs, select which options are enabled, etc.
+
+- Enable debug logging
+- Configurable class name, subclass name, class feature names, so module effects can be applied more generically.
+- Equation overides for healing and temp hp aura values.
+
 ## Strength Advantage
 
 This is currently not enabled because it works by adding the advantage to the token - which won't stack if another effect adds advantage in the same way. Probably it should be an effect that is added or removed.

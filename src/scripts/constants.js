@@ -10,5 +10,5 @@ export const AURA = {
   HAWK: "hawk",
 }
 
-export const LOGLEVEL = 3
+export const LOGLEVEL = 1
 export const LOGHEADER = `[${MODULE.window}]`
