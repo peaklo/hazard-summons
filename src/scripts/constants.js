@@ -5,10 +5,7 @@ export const MODULE = {
 }
 
 export const AURA = {
-  BEAR: "bear",
-  UNICORN: "unicorn",
-  HAWK: "hawk",
+  STRENGTH: "bear",
+  HEALING: "unicorn",
+  AGILITY: "hawk",
 }
-
-export const LOGLEVEL = 1
-export const LOGHEADER = `[${MODULE.window}]`

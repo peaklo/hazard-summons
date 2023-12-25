@@ -1,11 +1,6 @@
-import { MODULE, AURA, LOGLEVEL, LOGHEADER } from "./constants.js"
-
-const log = {
-  debug: (message) => LOGLEVEL >= 3 && console.log(`${LOGHEADER} ${message}`),
-  info: (message) => LOGLEVEL >= 2 && console.log(`${LOGHEADER} ${message}`),
-  warn: (message) => LOGLEVEL >= 1 && console.log(`${LOGHEADER} ${message}`),
-  error: (message) => LOGLEVEL >= 0 && console.log(`${LOGHEADER} ${message}`),
-}
+import { MODULE, AURA } from "./constants.js"
+import { CONFIG } from "./settings.js"
+import { LOG } from "./logger.js"
 
 const newAura = (type, sceneId, templateId, hookName, hookIndex) => {
   let aura = {
@@ -15,7 +10,7 @@ const newAura = (type, sceneId, templateId, hookName, hookIndex) => {
     hookName: hookName,
     hookIndex: hookIndex,
   }
-  log.info(`Created aura: ${JSON.stringify(aura, null, 2)}`)
+  LOG.info(`Created aura: ${JSON.stringify(aura, null, 2)}`)
   return aura
 }
 
@@ -33,12 +28,18 @@ const hasTrait = (actor, name, strict = true) => {
   )
 }
 
-const isCircleOfTheSheperd = (actor) => {
-  return hasTrait(actor, "Circle of the Shepherd", false)
+const isEnhancedSummoner = (actor) => {
+  for (const name in CONFIG.getEnhancedSummonerTags()) {
+    if (hasTrait(actor, name, false)) return true
+    return false
+  }
 }
 
-const isMightySummoner = (actor) => {
-  return hasTrait(actor, "Mighty Summoner")
+const hasPowerfulSummons = (actor) => {
+  for (const name in CONFIG.getPowerfulSummonsTags()) {
+    if (hasTrait(actor, name, false)) return true
+    return false
+  }
 }
 
 const hasSpiritAuraType = (actor, type) => {
@@ -65,13 +66,13 @@ const countHitDice = (hpFormula) => {
   return hd
 }
 
-/** Add features to the summon graned by the Mighty Summoner feature:
+/** Add features to the summon granted to powerful summons:
  *    2 extra base HP per hit die
  *    Natural attacks count as magic
  *
  * @param {*} actor Actor to apply updates to
  */
-const addMightySummonerFeatures = (actor) => {
+const addPowerfulSummonsFeatures = (actor) => {
   let hp = actor.system.attributes.hp
   let bonusHp = 2 * countHitDice(hp.formula)
   let newHp = bonusHp + hp.value
@@ -111,7 +112,7 @@ const addMagicAttacks = (actor) => {
 const cotsModifySummon = ({ updates, sourceData }) => {
   let actor = updates.actor
   let summoner = game.actors.get(sourceData.summonerTokenDocument.actorId)
-  if (!isCircleOfTheSheperd(summoner)) return // Summons not eligible for modification
+  if (!isEnhancedSummoner(summoner)) return // Summons not eligible for modification
   if (actor.flags[MODULE.id]?.summoned) return // Modification already applied to the summon template.
 
   actor.flags[MODULE.id] = {
@@ -122,16 +123,16 @@ const cotsModifySummon = ({ updates, sourceData }) => {
   actor.name = `Summoned ${actor.name}`
   updates.token.name = actor.name
 
-  if (isMightySummoner(summoner)) addMightySummonerFeatures(actor)
+  if (hasPowerfulSummons(summoner)) addPowerfulSummonsFeatures(actor)
 }
 
-/** Grant Bear Aura temporary HP to actors. Temporary HP does not stack so actor must
+/** Grant Strength Aura temporary HP to actors. Temporary HP does not stack so actor must
  * have fewer temporary HP then the amount given.
  *
  * @param {Array} actors token ids located within the aura
  * @param {Number} hp     amount of temorary HP to grant
  */
-const grantBearAuraTempHp = (actors, hp) => {
+const grantStrengthAuraTempHp = (actors, hp) => {
   actors
     .filter((actor) => !actor.system?.attributes?.hp.temp || 0 < hp)
     .forEach((actor) => {
@@ -139,7 +140,7 @@ const grantBearAuraTempHp = (actors, hp) => {
     })
 }
 
-const unicornSpiritAuraHealing = (actor) => {
+const healAlliesInAura = (actor) => {
   let aura = actor.flags[MODULE.flag].spiritAura
   let doc = game.scenes.get(aura.sceneId)?.templates?.get(aura.templateId)
   if (!doc) return
@@ -148,21 +149,21 @@ const unicornSpiritAuraHealing = (actor) => {
   actors.forEach((actor) => {
     let hp = actor.system.attributes.hp
     healing = Math.min(hp.max - hp.value, healing)
-    log.info(`Unicorn Aura healing ${actor.name} for ${healing}`)
+    LOG.info(`Aura healed ${actor.name} for ${healing}`)
     actor.update({
       system: { attributes: { hp: { value: hp.value + healing } } },
     })
   })
 }
 
-/** Grant save/check advantage for bear aura - WIP
+/** Grant save/check advantage for strength aura - WIP
  * TODO Id prefer to grant these via an effect so they can be removed when
  * exiting the aura without risking conflict with other sources - TBD.
  *
  * @param {Array} actors List of actors to grant bonus to
  */
 // eslint-disable-next-line no-unused-vars
-const grantBearAuraAdvantage = (actors) => {
+const grantStrengthAuraAdvantage = (actors) => {
   actors.forEach((actor) => {
     actor.update({
       flags: {
@@ -191,13 +192,13 @@ const deleteAura = (spiritAura) => {
   if (doc) doc.delete()
 }
 
-// Convenience function exposed to users to create bear aura
-const cotsBearAura = (scope, actor, token) => {
-  cotsSpiritAura(scope, actor, token, AURA.BEAR)
+// Convenience function exposed to users to create strength aura
+const strengthAura = (scope, actor, token) => {
+  cotsSpiritAura(scope, actor, token, AURA.STRENGTH)
 }
 
-const cotsUnicornAura = (scope, actor, token) => {
-  cotsSpiritAura(scope, actor, token, AURA.UNICORN)
+const healingAura = (scope, actor, token) => {
+  cotsSpiritAura(scope, actor, token, AURA.HEALING)
 }
 
 /** Create a spirit aura from Circle of the Shepherd druid subclass.
@@ -211,7 +212,7 @@ const cotsSpiritAura = async (scope, actor, token, type) => {
   const templateData = {
     t: "circle",
     user: game.userId,
-    distance: 5,
+    distance: CONFIG.getAuraRadius(),
     direction: 45,
     x: 1000,
     y: 1000,
@@ -230,27 +231,27 @@ const cotsSpiritAura = async (scope, actor, token, type) => {
   let [auraTemplate] = await template.drawPreview()
 
   let spiritAura
-  if (type == AURA.UNICORN) {
-    spiritAura = setupUnicornAura(auraTemplate)
-  } else if (type == AURA.BEAR) {
-    spiritAura = setupBearAura(actor, auraTemplate)
+  if (type == AURA.HEALING) {
+    spiritAura = setupHealingAura(auraTemplate)
+  } else if (type == AURA.STRENGTH) {
+    spiritAura = setupStrengthAura(actor, auraTemplate)
   }
 
   setActorAura(actor, spiritAura)
 }
 
 const checkAuraForHealing = (workflow) => {
-  if (!hasSpiritAuraType(workflow.actor, AURA.UNICORN)) return
+  if (!hasSpiritAuraType(workflow.actor, AURA.HEALING)) return
   if (!itemHasHealingType(workflow.item)) return
-  unicornSpiritAuraHealing(workflow.actor)
+  healAlliesInAura(workflow.actor)
 }
 
-const setupUnicornAura = (auraTemplate) => {
-  log.info(`setupUnicornAura template: ${auraTemplate.id}`)
+const setupHealingAura = (auraTemplate) => {
+  LOG.info(`setupHealingAura template: ${auraTemplate.id}`)
   let hookName = "midi-qol.RollComplete"
   let hookIndex = Hooks.on(hookName, checkAuraForHealing)
   return newAura(
-    AURA.UNICORN,
+    AURA.HEALING,
     auraTemplate.parent.id,
     auraTemplate.id,
     hookName,
@@ -258,20 +259,20 @@ const setupUnicornAura = (auraTemplate) => {
   )
 }
 
-const setupBearAura = (actor, auraTemplate) => {
-  log.info(`setupBearAura actor:${actor.id}, template: ${auraTemplate.id}`)
+const setupStrengthAura = (actor, auraTemplate) => {
+  LOG.info(`setupStrengthAura actor:${actor.id}, template: ${auraTemplate.id}`)
   const callback = () => {
     try {
       Hooks.off("refreshMeasuredTemplate", callback)
       let actors = getActorsInTemplate(auraTemplate, isSummonOrAlly)
-      grantBearAuraTempHp(actors, getSummonerLevel(actor) + 5)
-      // grantBearAuraAdvantage(actors)
+      grantStrengthAuraTempHp(actors, getSummonerLevel(actor) + 5)
+      // grantStrengthAuraAdvantage(actors)
     } catch (e) {
       console.log(`Error while checking contents of aura: ${e.message}`)
     }
   }
   Hooks.on("refreshMeasuredTemplate", callback)
-  return newAura(AURA.BEAR, auraTemplate.parent.id, auraTemplate.id)
+  return newAura(AURA.STRENGTH, auraTemplate.parent.id, auraTemplate.id)
 }
 
 const isSummonOrAlly = (actor) => {
@@ -286,7 +287,7 @@ const isSummonOrAlly = (actor) => {
 const getActorsInTemplate = (template, filter = () => true) => {
   const tokens = template.parent.tokens
   let tokenIds = game.modules.get("templatemacro").api.findContained(template)
-  // console.log(`Found ${tokenIds.length} tokens in aura ${template.id}`);
+  LOG.debug(`Found ${tokenIds.length} tokens in aura ${template.id}`)
   let actors = []
   if (tokenIds)
     tokenIds.forEach((id) => {
@@ -299,25 +300,25 @@ Hooks.once("init", () => {
   Hooks.on("fs-preSummon", cotsModifySummon)
 })
 
-// Need to recreate the unicorn aura hook
+// Need to recreate the healing aura hook
 Hooks.once("renderApplication", () => {
   game.actors.forEach((actor) => {
-    log.debug(
+    LOG.debug(
       `${actor.name}:${actor.id} spirit aura: ${
         actor.flags[MODULE.flag]?.spiritAura
       }`
     )
-    if (!hasSpiritAuraType(actor, AURA.UNICORN)) return
+    if (!hasSpiritAuraType(actor, AURA.HEALING)) return
     let spiritAura = actor.flags[MODULE.flag].spiritAura
-    log.info(`Found spiritAura data on actor:${actor.id}: ${spiritAura}`)
+    LOG.info(`Found spiritAura data on actor:${actor.id}: ${spiritAura}`)
     let auraTemplate = game.scenes
       .get(spiritAura.sceneId)
       ?.templates?.get(spiritAura.templateId)
     if (auraTemplate) {
-      spiritAura = setupUnicornAura(auraTemplate)
+      spiritAura = setupHealingAura(auraTemplate)
       setActorAura(actor, spiritAura)
     } else {
-      log.info("Cannot find scene or template, deleting aura data")
+      LOG.info("Cannot find scene or template, deleting aura data")
       setActorAura(actor, {})
     }
   })
@@ -326,7 +327,7 @@ Hooks.once("renderApplication", () => {
 const setActorAura = (actor, spiritAura) => {
   let update = { flags: {} }
   update.flags[MODULE.flag] = { spiritAura }
-  log.info(
+  LOG.info(
     `Updating ${actor.name}:${actor.id}: ${JSON.stringify(update, null, 2)}`
   )
   actor.update(update)
@@ -335,7 +336,7 @@ const setActorAura = (actor, spiritAura) => {
 window[MODULE.window] = window[MODULE.window] || {}
 window[MODULE.window] = {
   ...(window[MODULE.window] || {}),
-  cotsBearAura,
+  cotsBearAura: strengthAura,
   cotsModifySummon,
-  cotsUnicornAura,
+  cotsUnicornAura: healingAura,
 }

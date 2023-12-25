@@ -1,15 +1,11 @@
-let level = 1;
-export const log = {
-  setLevel: (l) => {
-    level = l;
-  },
-  info: (message) => {
-    level >= 3 && console.log(message);
-  },
-  warn: (message) => {
-    level >= 2 && console.warn(message);
-  },
-  error: (message) => {
-    level >= 1 && console.error(message);
-  },
-};
+import { MODULE } from "./constants.js"
+
+export const LOGLEVEL = 1
+export const LOGHEADER = `[${MODULE.window}]`
+
+export const LOG = {
+  debug: (message) => LOGLEVEL >= 3 && console.log(`${LOGHEADER} ${message}`),
+  info: (message) => LOGLEVEL >= 2 && console.log(`${LOGHEADER} ${message}`),
+  warn: (message) => LOGLEVEL >= 1 && console.log(`${LOGHEADER} ${message}`),
+  error: (message) => LOGLEVEL >= 0 && console.log(`${LOGHEADER} ${message}`),
+}
