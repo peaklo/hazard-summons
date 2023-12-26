@@ -1,11 +1,11 @@
 import { MODULE } from "./constants.js"
 // import { CONFIG } from "./settings.js"
-// import { LOG } from "./logger.js"
+import { LOG } from "./logger.js"
 
 const visionLabels = ["blindsight", "darkvision", "tremorsense", "truesight"]
 const crLabels = ["CR 1/8", "CR 1/4", "CR 1/2", "CR 1", "CR 2"]
 const typeLabels = ["beast", "fey", "elemental"]
-// const movementLabels = [""]
+const movementLabels = ["burrow", "climb", "fly", "swim"]
 
 const buildLabelFlags = (labels, filters) => {
   let flags = {}
@@ -23,15 +23,48 @@ const getSpecialFilter = (filters) => {
     let typeFlags = buildLabelFlags(typeLabels, filters)
     let visionFlags = buildLabelFlags(visionLabels, filters)
     let crFlags = buildLabelFlags(crLabels, filters)
+    let movementFlags = buildLabelFlags(movementLabels, filters)
+    let movementIndexed = validateIndex(
+      index[0]?.system?.attributes?.movement,
+      "system.attributes.movement"
+    )
+    let visionIndexed = validateIndex(
+      index[0]?.system?.attributes?.senses,
+      "system.attributes.senses"
+    )
+    let typeIndexed = validateIndex(
+      index[0]?.system?.details?.type,
+      "system.details.type.value"
+    )
+
+    // system.details.type.value, system.attributes.senses, system.attributes.movement
     return index.filter((item) => {
       let pass = !item.name.startsWith("Swarm")
       if (pass) pass = typeLabels.includes(item.system.details.type.value)
-      if (pass) pass = typeFilter(item, typeFlags)
-      if (pass) pass = visionFilter(item, visionFlags)
+      if (pass) pass = !typeIndexed || typeFilter(item, typeFlags)
+      if (pass) pass = !visionIndexed || visionFilter(item, visionFlags)
+      if (pass) pass = !movementIndexed || movementFilter(item, movementFlags)
       if (pass) pass = crFilter(item, crFlags)
       return pass
     })
   }
+}
+
+const validateIndex = (value, path) => {
+  if (!value)
+    LOG.warn(`Missing index. Add ${path} to FoundrySummons additional indexes.`)
+  return !!value
+}
+
+const movementFilter = (item, flags) => {
+  let filtering = false
+  let match = false
+  for (const name of movementLabels) {
+    if (flags[name]) filtering = true
+    if (flags[name] && item.system.attributes.movement[name] > 0) match = true
+  }
+  if (!filtering) return true
+  return match
 }
 
 const crFilter = (item, flags) => {
@@ -106,20 +139,10 @@ const enhancedSummonFilter = () => {
     },
   }
 
-  let labels = [...typeLabels, ...visionLabels, ...crLabels]
+  let labels = [...typeLabels, ...visionLabels, ...movementLabels, ...crLabels]
   labels.forEach((name) => {
     foundrySummonOptions.filters.push(getDummyFilter(name))
   })
-
-  //   typeLabels.forEach((name) => {
-  //     foundrySummonOptions.filters.push(getDummyFilter(name))
-  //   })
-  //   visionLabels.forEach((name) => {
-  //     foundrySummonOptions.filters.push(getDummyFilter(name))
-  //   })
-  //   crLabels.forEach((name) => {
-  //     foundrySummonOptions.filters.push(getDummyFilter(name))
-  //   })
 
   foundrySummonOptions.filters.push({
     name: "Filters Enabled",
