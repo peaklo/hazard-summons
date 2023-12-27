@@ -151,7 +151,7 @@ const calculateDamage = (formula) => {
   }
   const { count, die, op, mod } = match.groups
   let total = Math.ceil((count * die) / 2)
-  let bonus = mod ? mod : 0
+  let bonus = Number(mod ? mod : 0)
   if (op == "-") total -= bonus
   if (!op || op == "+") total += bonus
   return total
