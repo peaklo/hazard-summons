@@ -123,7 +123,7 @@ const calculateAttackData = (actor) => {
     actor.items.filter((item) => item.name == "Multiattack").length > 0
   let chance = (hit / 20) * multiattack ? 1.5 : 1
   let dmg = averageDamage(actor)
-  return { hit, dmg, rating: chance * averageDamage(actor) }
+  return { hit, dmg, rating: Math.ceil(chance * averageDamage(actor)) }
 }
 
 const averageDamage = (actor) => {
