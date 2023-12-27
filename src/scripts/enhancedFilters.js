@@ -117,21 +117,114 @@ const getDummyFilter = (name) => {
   return filter
 }
 
+const calculateAttackRating = (actor) => {
+  let hit = maxToHit(actor)
+  let multiattack =
+    actor.items.filter((item) => item.name == "Multiattack").length > 0
+  let chance = (hit / 20) * multiattack ? 1.5 : 1
+  return chance * averageDamage(actor)
+}
+
+const averageDamage = (actor) => {
+  let items = actor?.items.filter(
+    (x) => x?.type == "weapon" && x?.labels?.derivedDamage?.[0]
+  )
+  let maxDamage = 0
+  for (const item of items) {
+    for (const entry of item?.labels?.derivedDamage || []) {
+      let damage = calculateDamage(entry.formula)
+      if (damage > maxDamage) maxDamage = damage
+    }
+  }
+  return maxDamage
+}
+
+const damageRegex = /(?<count>\d+)d(?<die>\d+)\s*(?<op>[-+])?\s*(?<mod>\d+)?/
+const numberRegex = /(?<value>\d+)/
+const calculateDamage = (formula) => {
+  let match = damageRegex.exec(formula)
+  if (!match) {
+    match = numberRegex.exec(formula)
+    if (match) return match.groups.value
+    else return 0
+  }
+  const { count, die, op, mod } = match.groups
+  let total = Math.ceil((count * die) / 2)
+  let bonus = mod ? mod : 0
+  if (op == "-") total -= bonus
+  if (!op || op == "+") total += bonus
+  return total
+}
+
+const maxToHit = (actor) => {
+  let items = actor?.items.filter(
+    (x) =>
+      x?.type == "weapon" && x?.labels?.toHit && x?.labels?.derivedDamage?.[0]
+  )
+  let hit = 0
+  for (const item of items) {
+    let value = parseInt(item.labels.toHit.replaceAll(" ", ""))
+    if (value && value > hit) hit = value
+  }
+  // toHitIndex[actor.id] = hit
+  return hit
+}
+
+const compareCr = (a, b) => {
+  let result = a.system.details.cr - b.system.details.cr
+  if (result === 0) result = a.name.localeCompare(b)
+  return result
+}
+
+const compareAttackRating = (a, b) => {
+  if (a.maxToHit === undefined) LOG.warn(`${a.name} maxToHit not indexed.`)
+  if (b.maxToHit === undefined) LOG.warn(`${b.name} maxToHit not indexed.`)
+  LOG.debug(`${a.name}(${a.attackRating}) - ${b.name}(${b.attackRating})`)
+  return b.attackRating - a.attackRating
+}
+
+// const compareToHit = (a, b) => {
+//   // Indexing is asynchronous, but the summoning menu (or at least the fs-)
+//   if (a.maxToHit === undefined) LOG.warn(`${a.name} maxToHit not indexed.`)
+//   if (b.maxToHit === undefined) LOG.warn(`${b.name} maxToHit not indexed.`)
+//   LOG.debug(`${a.name}(${a.maxToHit}) - ${b.name}(${b.maxToHit})`)
+//   return b.maxToHit - a.maxToHit
+//   //   let aMax = maxToHit(a)
+//   //   let bMax = maxToHit(b)
+//   //   let result = bMax - aMax
+//   //   LOG.debug(`Comparing ${a.name}(${aMax}) to ${b.name}(${bMax}) = ${result}`)
+//   //   if (result === 0) result = a.name.localeCompare(b)
+//   //   return result
+// }
+
+/** Call FoundrySummons with a custom set of filters. Instead of the default 
+ * filter behavior, where each filter is checked sequentially, the filters are
+ * all dummy filters which always return true, except for the final "smart"
+ * filter. This filter checks which of the dummy filters are enabled, and
+ * filters the collection based on custom rules.
+ *  - Each category of filter is treated as an OR test, so if darkvision and
+ *    blindsight are selected, creatures with either ability are returned.
+ *  - This is applied to the creature type, challenge rating, vision and
+ *    movement filters.
+ *  - Only beast, fey and elemental types are shown, as these are the only
+ *    types eligible for group conjure spells.
+ *  - CR 0 are never shown as its assumed they are not worth summoning.
+    - CR > 2 are never shown as group conjure spells are capped at CR 2.
+    - Swarm creatures are never shown, as they are not eligible for group
+      conjure despite carrying the beast type.
+ */
 const enhancedSummonFilter = () => {
-  // 1. Open new filtering window
-  // 2. Window has checkboxes for features
-  // 3. Checking boxes modifies behavior of "filter" fn passed to fs
-  // -- OR --
-  // 1. Pass multiple filters to fs as current
-  // 2. Hold handle on them and inspect disabled property
-  // 3. filter function adjusts behavior based on disabled field
   const foundrySummonOptions = {
     filters: [],
     sorting: [
       {
         name: "CR Ascending",
-        function: (a, b) =>
-          a.system.details.cr - b.system.details.cr || a.name.localeCompare(b),
+        function: compareCr,
+      },
+      {
+        name: "To Hit Descending",
+        // function: compareToHit,
+        function: compareAttackRating,
       },
     ],
     options: {
@@ -153,13 +246,31 @@ const enhancedSummonFilter = () => {
   foundrySummons.openMenu(foundrySummonOptions)
 }
 
-// How to inject indexes?
-// TODO force FS to index the fields we use without GM having to enter it?
-// Hooks.on("init", () => {
-//   Hooks.once(() => {
-//     Found
-//   })
-// })
+// Compendium.dnd5e.monsters.Actor.0m8QyDN52qw9zzOM
+const getPackData = (lookup, uuid) => {
+  let index = uuid.lastIndexOf(".")
+  let key = uuid.slice(0, index)
+  let id = uuid.slice(index + 1)
+  if (!lookup[key]) {
+    let packName = key.replace("Compendium.", "").replace(".Actor", "")
+    lookup[key] = game.packs.get(packName)
+  }
+  return [lookup[key], id]
+}
+
+Hooks.once("ready", () => {
+  Hooks.on("fs-loadingPacks", async (index) => {
+    let packLookup = {}
+    for (const entry of index) {
+      const [packData, entryId] = getPackData(packLookup, entry.id)
+      if (packData) {
+        let actor = await packData.getDocument(entryId)
+        entry.attackRating = calculateAttackRating(actor)
+        // entry.maxToHit = maxToHit(actor)
+      } else LOG.error(`Missing pack data for ${entry.id}`)
+    }
+  })
+})
 
 window[MODULE.window] = {
   ...(window[MODULE.window] || {}),
