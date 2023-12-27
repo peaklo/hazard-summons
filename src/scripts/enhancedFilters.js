@@ -117,12 +117,13 @@ const getDummyFilter = (name) => {
   return filter
 }
 
-const calculateAttackRating = (actor) => {
+const calculateAttackData = (actor) => {
   let hit = maxToHit(actor)
   let multiattack =
     actor.items.filter((item) => item.name == "Multiattack").length > 0
   let chance = (hit / 20) * multiattack ? 1.5 : 1
-  return chance * averageDamage(actor)
+  let dmg = averageDamage(actor)
+  return { hit, dmg, rating: chance * averageDamage(actor) }
 }
 
 const averageDamage = (actor) => {
@@ -177,10 +178,10 @@ const compareCr = (a, b) => {
 }
 
 const compareAttackRating = (a, b) => {
-  if (a.maxToHit === undefined) LOG.warn(`${a.name} maxToHit not indexed.`)
-  if (b.maxToHit === undefined) LOG.warn(`${b.name} maxToHit not indexed.`)
-  LOG.debug(`${a.name}(${a.attackRating}) - ${b.name}(${b.attackRating})`)
-  return b.attackRating - a.attackRating
+  if (a.atkRating === undefined) LOG.warn(`${a.name} maxToHit not indexed.`)
+  if (b.atkRating === undefined) LOG.warn(`${b.name} maxToHit not indexed.`)
+  LOG.debug(`${a.name}(${a.atkRating}) - ${b.name}(${b.atkRating})`)
+  return b.atkRating - a.atkRating
 }
 
 // const compareToHit = (a, b) => {
@@ -246,7 +247,6 @@ const enhancedSummonFilter = () => {
   foundrySummons.openMenu(foundrySummonOptions)
 }
 
-// Compendium.dnd5e.monsters.Actor.0m8QyDN52qw9zzOM
 const getPackData = (lookup, uuid) => {
   let index = uuid.lastIndexOf(".")
   let key = uuid.slice(0, index)
@@ -265,8 +265,10 @@ Hooks.once("ready", () => {
       const [packData, entryId] = getPackData(packLookup, entry.id)
       if (packData) {
         let actor = await packData.getDocument(entryId)
-        entry.attackRating = calculateAttackRating(actor)
-        // entry.maxToHit = maxToHit(actor)
+        const { hit, dmg, rating } = calculateAttackData(actor)
+        entry.atkRating = rating
+        entry.atkHit = hit
+        entry.atkDmg = dmg
       } else LOG.error(`Missing pack data for ${entry.id}`)
     }
   })
